@@ -1,833 +1,251 @@
 <!DOCTYPE html>
-<!-- Visualization & Content Choices:
-    - Report Info: Introducción (Sec 1) -> Goal: Inform about AI evolution and classification -> Viz: Styled text blocks, bulleted lists -> Interaction: None specific, focus on readability -> Justification: Clear presentation of foundational concepts.
-    - Report Info: LLMs (Sec 2, Table 1) -> Goal: Inform & Compare LLMs -> Viz: Expandable cards for model details, interactive sortable/filterable HTML table for Table 1 data, Bar charts (Chart.js) for MMLU/Index and Speed -> Interaction: Click to expand cards, text filter for table, click column headers to sort table, hover tooltips on charts -> Justification: Cards for quick overviews, table for detailed comparison, charts for visual performance insights. -> Library: Vanilla JS, Chart.js.
-    - Report Info: Visión por Computadora (Sec 3, Table 2) -> Goal: Inform & Compare CV Models -> Viz: Expandable cards, interactive sortable/filterable HTML table for Table 2 data, Bar charts (Chart.js) for Accuracy and Inference Speed -> Interaction: Similar to LLMs section -> Justification: Consistent approach for model comparison. -> Library: Vanilla JS, Chart.js.
-    - Report Info: IA Generativa (Sec 4, Table 3) -> Goal: Inform about GenAI models and ethics -> Viz: Expandable cards for model details (from Table 3), styled text for ethical considerations -> Interaction: Click to expand cards -> Justification: Clear presentation of models and important ethical discussion. -> Library: Vanilla JS.
-    - Report Info: Otros Modelos (Sec 5, Table 4) -> Goal: Inform about specialized AI models -> Viz: Expandable cards for model details (from Table 4) -> Interaction: Click to expand cards -> Justification: Highlight key specialized AI applications. -> Library: Vanilla JS.
-    - Report Info: Evaluación (Sec 6) -> Goal: Explain AI evaluation methods -> Viz: Styled text blocks, bulleted lists for metric types -> Interaction: None specific, focus on readability -> Justification: Clear explanation of complex evaluation concepts.
-    - Report Info: Limitaciones y Desafíos (Sec 7) -> Goal: Detail AI challenges -> Viz: Styled text blocks, grouped by challenge type (e.g., Bias, Hallucinations) -> Interaction: None specific, focus on readability -> Justification: Structured presentation of critical AI issues.
-    - Report Info: Tendencias Futuras (Sec 8) -> Goal: Outline future AI directions -> Viz: Expandable cards for XAI, Epistemic AI, Quantum AI -> Interaction: Click to expand cards -> Justification: Concise overview of future trends.
-    - Report Info: Conclusión (Sec 9) -> Goal: Summarize report -> Viz: Styled text block -> Interaction: None specific -> Justification: Standard report conclusion.
-    - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Explorador Interactivo de Modelos de IA</title>
+    <title>MemeTime: Un Viaje por la Historia de los Memes</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #FAF7F5; /* Base Warm Neutral */
-            color: #3D3B3A; /* Text Warm Neutral */
+            background-color: #f0f2f5; /* Light gray background */
+            color: #333;
+            line-height: 1.6;
         }
-        .nav-link {
-            @apply px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-amber-100 hover:text-amber-700 transition-colors;
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.5rem;
         }
-        .nav-link.active {
-            @apply bg-amber-600 text-white hover:bg-amber-700 hover:text-white;
+        .section-header {
+            cursor: pointer;
+            transition: background-color 0.3s ease;
         }
-        .section-title {
-            @apply text-3xl font-bold text-amber-700 mb-6 text-center; /* Accent1 for titles */
+        .section-header:hover {
+            background-color: #e2e8f0; /* Lighter gray on hover */
         }
+        .content-hidden {
+            display: none;
+        }
+        /* Custom styles for better visual appeal */
         .card {
-            @apply bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300;
+            background-color: #ffffff;
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-xl */
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
         }
-        .card-title {
-            @apply text-xl font-semibold text-amber-600 mb-2; /* Accent1 variant */
+        .btn-primary {
+            background-color: #4f46e5; /* Indigo 600 */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem; /* rounded-lg */
+            font-weight: 600; /* font-semibold */
+            transition: background-color 0.3s ease;
         }
-        .card-content p, .card-content li {
-            @apply text-gray-700 mb-1 text-sm;
+        .btn-primary:hover {
+            background-color: #4338ca; /* Indigo 700 */
         }
-        .card-content ul {
-            @apply list-disc list-inside text-gray-700 text-sm space-y-1;
+        .timeline-era-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .chart-container {
-            position: relative;
-            width: 100%;
-            max-width: 680px;
-            margin-left: auto;
-            margin-right: auto;
-            height: 360px; 
-            max-height: 420px;
+        .timeline-era-title svg {
+            transition: transform 0.3s ease;
         }
-        @media (min-width: 768px) { /* md breakpoint */
-            .chart-container {
-                height: 400px;
-                max-height: 450px;
-            }
-        }
-        table {
-            @apply w-full text-sm text-left text-gray-500;
-        }
-        thead {
-            @apply text-xs text-gray-700 uppercase bg-amber-50; /* Accent2 variant for table head */
-        }
-        th, td {
-            @apply px-4 py-3;
-        }
-        tbody tr {
-            @apply border-b bg-white hover:bg-amber-50; /* Accent2 variant for row hover */
-        }
-        .expand-button {
-            @apply text-amber-600 hover:text-amber-800 text-xs font-semibold mt-2 inline-block;
-        }
-        .details {
-            @apply hidden mt-2 border-t border-amber-200 pt-2;
-        }
-        .filter-input {
-            @apply mt-1 block w-full md:w-1/2 lg:w-1/3 px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-amber-500 focus:border-amber-500 sm:text-sm mb-4 mx-auto;
-        }
-        .sortable {
-            @apply cursor-pointer;
-        }
-        .sortable .fa-sort, .sortable .fa-sort-up, .sortable .fa-sort-down {
-            @apply text-gray-400;
+        .timeline-era-title.active svg {
+            transform: rotate(180deg);
         }
     </style>
 </head>
-<body class="antialiased">
+<body class="bg-gray-100 text-gray-800">
+    <div class="container">
+        <header class="text-center py-8 bg-white rounded-xl shadow-lg mb-8">
+            <h1 class="text-5xl font-extrabold text-indigo-700 mb-4">MemeTime</h1>
+            <p class="text-xl text-gray-600">Un Viaje por la Historia de los Memes</p>
+        </header>
 
-    <header class="bg-white shadow-md sticky top-0 z-50">
-        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <div class="flex items-center">
-                    <a href="#" class="text-2xl font-bold text-amber-700">
-                        <i class="fas fa-brain mr-2"></i>Modelos de IA
-                    </a>
-                </div>
-                <div class="hidden md:block">
-                    <div class="ml-10 flex items-baseline space-x-1">
-                        <a href="#introduccion" class="nav-link active">Introducción</a>
-                        <a href="#llms" class="nav-link">LLMs</a>
-                        <a href="#vision" class="nav-link">Visión</a>
-                        <a href="#generativa" class="nav-link">IA Generativa</a>
-                        <a href="#otros-modelos" class="nav-link">Otros</a>
-                        <a href="#evaluacion" class="nav-link">Evaluación</a>
-                        <a href="#desafios" class="nav-link">Desafíos</a>
-                        <a href="#futuro" class="nav-link">Futuro</a>
-                        <a href="#conclusion" class="nav-link">Conclusión</a>
-                    </div>
-                </div>
-                <div class="md:hidden">
-                    <button id="mobile-menu-button" class="text-gray-700 hover:text-amber-700 focus:outline-none">
-                        <i class="fas fa-bars text-2xl"></i>
-                    </button>
-                </div>
-            </div>
-        </nav>
-        <div id="mobile-menu" class="md:hidden hidden bg-white shadow-lg">
-            <a href="#introduccion" class="block nav-link text-base">Introducción</a>
-            <a href="#llms" class="block nav-link text-base">LLMs</a>
-            <a href="#vision" class="block nav-link text-base">Visión</a>
-            <a href="#generativa" class="block nav-link text-base">IA Generativa</a>
-            <a href="#otros-modelos" class="block nav-link text-base">Otros Modelos</a>
-            <a href="#evaluacion" class="block nav-link text-base">Evaluación</a>
-            <a href="#desafios" class="block nav-link text-base">Desafíos</a>
-            <a href="#futuro" class="block nav-link text-base">Futuro</a>
-            <a href="#conclusion" class="block nav-link text-base">Conclusión</a>
-        </div>
-    </header>
-
-    <main class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-
-        <section id="introduccion" class="py-12">
-            <h2 class="section-title">1. Introducción: El Ecosistema de Modelos de IA</h2>
-            <p class="text-lg text-gray-700 mb-6 text-center max-w-3xl mx-auto">
-                Este explorador interactivo desglosa el "Panorama Exhaustivo de los Modelos de IA Actuales". La inteligencia artificial (IA) busca emular el pensamiento humano, evolucionando desde la IA simbólica hasta la IA generativa moderna, impulsada por arquitecturas como Transformer. Exploraremos su clasificación, impacto y los desafíos inherentes a su desarrollo.
-            </p>
-            <div class="grid md:grid-cols-2 gap-8 items-start">
-                <div class="card">
-                    <h3 class="card-title"><i class="fas fa-history mr-2"></i>Evolución Histórica Clave</h3>
-                    <div class="card-content">
-                        <p><strong>1940-1970:</strong> Fundamentos teóricos, IA simbólica (sistemas expertos).</p>
-                        <p><strong>1990-2000:</strong> Auge del Machine Learning (árboles de decisión, SVM, primeras redes neuronales).</p>
-                        <p><strong>2010s:</strong> Revolución del Deep Learning (GPUs, grandes datasets), avances en NLP y reconocimiento de imágenes.</p>
-                        <p><strong>2020s:</strong> Irrupción de la IA Generativa (GenAI), LLMs basados en Transformers.</p>
-                        <p class="mt-2">Esta trayectoria muestra una progresión desde reglas explícitas hacia el aprendizaje de patrones complejos en datos, introduciendo el desafío de la "caja negra".</p>
-                    </div>
-                </div>
-                <div class="card">
-                    <h3 class="card-title"><i class="fas fa-cogs mr-2"></i>Clasificación Fundamental</h3>
-                    <div class="card-content">
-                        <p><strong>Por Tipo de Aprendizaje:</strong></p>
-                        <ul>
-                            <li>Supervisado (datos etiquetados).</li>
-                            <li>No Supervisado (identificar patrones).</li>
-                            <li>Por Refuerzo (RL) (interacción con entorno).</li>
-                            <li>Profundo (redes neuronales multicapa).</li>
-                        </ul>
-                        <p class="mt-2"><strong>Por Capacidad:</strong> IA Débil (específica), IA Fuerte (general, hipotética), IA Superinteligente (teórica).</p>
-                        <p class="mt-2"><strong>Por Funcionalidad:</strong> Reactiva, Memoria Limitada, Teoría de la Mente (teórica), Autoconsciente (teórica).</p>
-                        <p class="mt-2"><strong>Por Propósito:</strong> Generativa (creación), Predictiva (pronóstico), Asistencial (ayuda humana).</p>
-                        <p class="mt-2">La IA multimodal, que integra múltiples tipos de datos, es un ejemplo de convergencia, imitando la cognición humana.</p>
-                    </div>
-                </div>
-            </div>
+        <section class="card mb-8">
+            <h2 class="text-3xl font-bold text-indigo-600 mb-4">¿Qué es un Meme?</h2>
+            <p class="mb-4">Inspirados en la **memética**, la teoría de la evolución cultural propuesta por Richard Dawkins en "El gen egoísta", los memes son unidades de información cultural que se replican y difunden de persona a persona, adaptándose y evolucionando en el proceso. En internet, un meme es mucho más: es una imagen, un video, una frase, un GIF o un concepto que se viraliza, generando versiones y parodias, y convirtiéndose en una forma de comunicación colectiva que refleja y moldea nuestra realidad.</p>
+            <p class="font-semibold text-lg text-gray-700">Los memes no son solo humor; son comentarios sociales, declaraciones políticas y expresiones artísticas.</p>
         </section>
 
-        <section id="llms" class="py-12 bg-amber-50 rounded-xl">
-            <h2 class="section-title">2. Modelos de Lenguaje Grande (LLMs) y NLP</h2>
-            <p class="text-lg text-gray-700 mb-8 text-center max-w-3xl mx-auto">
-                Los LLMs, impulsados por la arquitectura Transformer, han transformado la interacción humano-máquina. Esta sección detalla la arquitectura Transformer, presenta modelos clave con sus aplicaciones y ofrece una comparativa interactiva de su rendimiento basada en métricas como MMLU, velocidad y costo.
-            </p>
-            <div class="card mb-8">
-                <h3 class="card-title"><i class="fas fa-robot mr-2"></i>Arquitectura Transformer y su Impacto</h3>
-                <div class="card-content">
-                    <p>Introducida en 2017, la arquitectura Transformer utiliza mecanismos de **autoatención** para procesar secuencias de lenguaje de manera paralela, superando limitaciones de las RNNs. Permite ponderar la importancia de diferentes palabras y modelar relaciones a largo alcance.</p>
-                    <p><strong>Innovaciones Clave:</strong> Procesamiento Paralelo, Autoatención (Query, Key, Value), Codificación Posicional, Estructura Codificador-Decodificador.</p>
-                    <p><strong>Impacto:</strong> Mejor manejo de dependencias a largo alcance, avances en traducción, resumen, respuesta a preguntas y generación de texto. Excelente escalabilidad.</p>
-                </div>
-            </div>
-            <h3 class="text-2xl font-semibold text-amber-700 mb-4 text-center">Modelos LLM Clave y Aplicaciones</h3>
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10" id="llmModelsContainer">
-                </div>
-            <h3 class="text-2xl font-semibold text-amber-700 mb-4 text-center">Tabla 1: Comparativa de Rendimiento de LLMs</h3>
-            <p class="text-gray-600 mb-6 text-center">Filtra la tabla por nombre, desarrollador, etc., y ordena las columnas haciendo clic en los encabezados. Explora las gráficas para comparar visualmente el rendimiento.</p>
-            <input type="text" id="llmTableFilter" class="filter-input" placeholder="Filtrar modelos...">
-            <div class="overflow-x-auto bg-white rounded-lg shadow mb-8">
-                <table id="llmTable">
-                    <thead>
-                        <tr>
-                            <th class="sortable" data-sort-key="name">Modelo <i class="fas fa-sort ml-1"></i></th>
-                            <th class="sortable" data-sort-key="developer">Desarrollador <i class="fas fa-sort ml-1"></i></th>
-                            <th class="sortable" data-sort-key="mmlu_index">MMLU/Índice Intel. <i class="fas fa-sort ml-1"></i></th>
-                            <th class="sortable" data-sort-key="outputSpeed">Velocidad (tokens/s) <i class="fas fa-sort ml-1"></i></th>
-                            <th class="sortable" data-sort-key="ttft">Latencia (TTFT) <i class="fas fa-sort ml-1"></i></th>
-                            <th class="sortable" data-sort-key="contextWindow">Ventana Contexto <i class="fas fa-sort ml-1"></i></th>
-                            <th class="sortable" data-sort-key="cost">Costo (USD/1M tk) <i class="fas fa-sort ml-1"></i></th>
-                        </tr>
-                    </thead>
-                    <tbody id="llmTableBody"></tbody>
-                </table>
-            </div>
-            <div class="grid md:grid-cols-2 gap-8">
-                <div class="card">
-                    <h4 class="card-title text-center">MMLU / Índice de Inteligencia</h4>
-                    <div class="chart-container"><canvas id="llmMMLUChart"></canvas></div>
-                    <p class="text-xs text-gray-500 mt-2 text-center">Comparación de MMLU o Índice de Inteligencia. Valores más altos son mejores.</p>
-                </div>
-                <div class="card">
-                    <h4 class="card-title text-center">Velocidad de Salida (Tokens/s)</h4>
-                    <div class="chart-container"><canvas id="llmSpeedChart"></canvas></div>
-                    <p class="text-xs text-gray-500 mt-2 text-center">Comparación de velocidad de salida. Valores más altos son mejores.</p>
-                </div>
-            </div>
-        </section>
+        <section class="mb-8">
+            <h2 class="text-3xl font-bold text-indigo-600 mb-6 text-center">La Línea del Tiempo Interactiva</h2>
+            <p class="text-center text-gray-600 mb-8">Navega a través de las distintas eras para descubrir los memes que las definieron y el contexto que las hizo posibles. Haz clic en el título de cada era para expandir o contraer su contenido.</p>
 
-        <section id="vision" class="py-12">
-            <h2 class="section-title">3. Modelos de Visión por Computadora</h2>
-            <p class="text-lg text-gray-700 mb-8 text-center max-w-3xl mx-auto">
-                La visión por computadora (CV) permite a las máquinas "ver" e interpretar el mundo visual. Esta sección explora modelos fundamentales como CNNs y Vision Transformers, sus aplicaciones en clasificación, detección y segmentación, y una comparativa de su rendimiento.
-            </p>
-            <h3 class="text-2xl font-semibold text-amber-700 mb-4 text-center">Modelos CV Clave y Aplicaciones</h3>
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10" id="cvModelsContainer">
+            <div class="card era-section" id="era-1">
+                <div class="section-header timeline-era-title p-4 bg-gray-50 rounded-lg mb-4 hover:bg-gray-100 transition-colors duration-300">
+                    <h3 class="text-2xl font-semibold text-gray-800">Era 1: Las Semillas Digitales (Década de 1990 - Principios de los 2000)</h3>
+                    <svg class="w-6 h-6 text-gray-600 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                 </div>
-            <h3 class="text-2xl font-semibold text-amber-700 mb-4 text-center">Tabla 2: Comparativa de Rendimiento de Modelos de Visión</h3>
-            <p class="text-gray-600 mb-6 text-center">Filtra y ordena la tabla para analizar el rendimiento de diferentes modelos de visión en métricas como precisión y velocidad.</p>
-            <input type="text" id="cvTableFilter" class="filter-input" placeholder="Filtrar modelos...">
-            <div class="overflow-x-auto bg-white rounded-lg shadow mb-8">
-                <table id="cvTable">
-                    <thead>
-                        <tr>
-                            <th class="sortable" data-sort-key="name">Modelo <i class="fas fa-sort ml-1"></i></th>
-                            <th class="sortable" data-sort-key="year">Año <i class="fas fa-sort ml-1"></i></th>
-                            <th>Innovación Clave</th>
-                            <th class="sortable" data-sort-key="accuracy">Precisión Top-1 (ImageNet) <i class="fas fa-sort ml-1"></i></th>
-                            <th class="sortable" data-sort-key="map">mAP@0.50 <i class="fas fa-sort ml-1"></i></th>
-                            <th class="sortable" data-sort-key="speed">Vel. Inferencia (ms) <i class="fas fa-sort ml-1"></i></th>
-                            <th class="sortable" data-sort-key="params">Parámetros <i class="fas fa-sort ml-1"></i></th>
-                        </tr>
-                    </thead>
-                    <tbody id="cvTableBody"></tbody>
-                </table>
-            </div>
-            <div class="grid md:grid-cols-2 gap-8">
-                <div class="card">
-                    <h4 class="card-title text-center">Precisión Top-1 (ImageNet)</h4>
-                    <div class="chart-container"><canvas id="cvAccuracyChart"></canvas></div>
-                    <p class="text-xs text-gray-500 mt-2 text-center">Comparación de precisión en ImageNet. Valores más altos son mejores.</p>
-                </div>
-                <div class="card">
-                    <h4 class="card-title text-center">Velocidad de Inferencia (ms)</h4>
-                    <div class="chart-container"><canvas id="cvSpeedChart"></canvas></div>
-                    <p class="text-xs text-gray-500 mt-2 text-center">Comparación de velocidad. Valores más bajos son mejores.</p>
-                </div>
-            </div>
-        </section>
-
-        <section id="generativa" class="py-12 bg-amber-50 rounded-xl">
-            <h2 class="section-title">4. Modelos de IA Generativa</h2>
-            <p class="text-lg text-gray-700 mb-8 text-center max-w-3xl mx-auto">
-                La IA Generativa (GenAI) crea contenido original en diversas modalidades. Esta sección cubre modelos como GANs, VAEs, Stable Diffusion, DALL-E 3 y Sora, sus aplicaciones (Tabla 3), y las cruciales consideraciones éticas asociadas a su uso.
-            </p>
-            <h3 class="text-2xl font-semibold text-amber-700 mb-4 text-center">Modelos GenAI Clave y Aplicaciones (Tabla 3)</h3>
-             <p class="text-gray-600 mb-6 text-center">Explora los diferentes modelos de IA Generativa, sus desarrolladores, modalidades y capacidades. Filtra la tabla para encontrar modelos específicos.</p>
-            <input type="text" id="genAiTableFilter" class="filter-input" placeholder="Filtrar modelos GenAI...">
-            <div class="overflow-x-auto bg-white rounded-lg shadow mb-8">
-                <table id="genAiTable">
-                    <thead>
-                        <tr>
-                            <th class="sortable" data-sort-key="name">Modelo <i class="fas fa-sort ml-1"></i></th>
-                            <th class="sortable" data-sort-key="developer">Desarrollador <i class="fas fa-sort ml-1"></i></th>
-                            <th class="sortable" data-sort-key="modality">Modalidad Principal <i class="fas fa-sort ml-1"></i></th>
-                            <th>Capacidades Generativas Clave</th>
-                            <th>Características Clave</th>
-                            <th>Fortalezas / Limitaciones Notables</th>
-                        </tr>
-                    </thead>
-                    <tbody id="genAiTableBody"></tbody>
-                </table>
-            </div>
-            <div class="card mt-8">
-                <h3 class="card-title text-center"><i class="fas fa-balance-scale-left mr-2"></i>Consideraciones Éticas y Desafíos de la GenAI</h3>
-                <div class="card-content">
-                    <ul class="columns-1 md:columns-2 space-y-1">
-                        <li>Pérdida de empleos en campos creativos.</li>
-                        <li>Sesgos (raciales, de género, culturales).</li>
-                        <li>Deepfakes y desinformación.</li>
-                        <li>Creación de contenido ilegal.</li>
-                        <li>Explotación para ciberdelincuencia.</li>
-                        <li>Violaciones de propiedad intelectual.</li>
-                        <li>Proliferación de "AI slop" (contenido de baja calidad).</li>
-                        <li>Alto consumo de recursos y huella de carbono.</li>
-                        <li>Imprecisiones y "alucinaciones".</li>
-                    </ul>
-                    <p class="mt-3">La GenAI es poderosa pero conlleva riesgos sociales que exigen un desarrollo responsable y una evaluación que considere tanto la capacidad creativa como la adhesión a directrices éticas.</p>
-                </div>
-            </div>
-        </section>
-
-        <section id="otros-modelos" class="py-12">
-            <h2 class="section-title">5. Otros Modelos Influyentes y Aplicaciones Especializadas</h2>
-            <p class="text-lg text-gray-700 mb-8 text-center max-w-3xl mx-auto">
-                Existen modelos de IA con un impacto transformador en dominios específicos. Aquí destacamos AlphaFold en biología, los modelos de aprendizaje por refuerzo como AlphaZero y MuZero en juegos y optimización, y la IA predictiva y asistencial (Tabla 4).
-            </p>
-            <h3 class="text-2xl font-semibold text-amber-700 mb-4 text-center">Modelos Especializados y sus Impactos (Tabla 4)</h3>
-            <p class="text-gray-600 mb-6 text-center">Descubre cómo estos modelos están revolucionando campos como el descubrimiento de fármacos y la optimización de algoritmos. Filtra para encontrar modelos o dominios de tu interés.</p>
-            <input type="text" id="specializedTableFilter" class="filter-input" placeholder="Filtrar modelos especializados...">
-            <div class="overflow-x-auto bg-white rounded-lg shadow mb-8">
-                <table id="specializedTable">
-                    <thead>
-                        <tr>
-                            <th class="sortable" data-sort-key="name">Modelo <i class="fas fa-sort ml-1"></i></th>
-                            <th class="sortable" data-sort-key="developer">Desarrollador <i class="fas fa-sort ml-1"></i></th>
-                            <th class="sortable" data-sort-key="paradigm">Paradigma IA <i class="fas fa-sort ml-1"></i></th>
-                            <th>Dominio/Aplicación Principal</th>
-                            <th>Logro/Impacto Clave</th>
-                            <th>Notas/Limitaciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="specializedTableBody"></tbody>
-                </table>
-            </div>
-        </section>
-
-        <section id="evaluacion" class="py-12 bg-amber-50 rounded-xl">
-            <h2 class="section-title">6. Métricas de Evaluación y Benchmarking</h2>
-            <p class="text-lg text-gray-700 mb-8 text-center max-w-3xl mx-auto">
-                La evaluación de la IA, especialmente de modelos generativos, es compleja. Se requieren métricas que capturen la calidad, coherencia, seguridad y eficiencia, además de la experiencia del usuario. Esta sección detalla los métodos y la importancia de los benchmarks estandarizados y la evaluación humana.
-            </p>
-            <div class="grid md:grid-cols-2 gap-8">
-                <div class="card">
-                    <h3 class="card-title"><i class="fas fa-tasks mr-2"></i>Tipos de Métricas</h3>
-                    <div class="card-content">
-                        <p><strong>Métricas Cuantitativas:</strong> Punto a Punto (rúbrica), Pareadas (tasa de victorias).</p>
-                        <p class="mt-2"><strong>Categorías de Métricas:</strong></p>
-                        <ul>
-                            <li><strong>Calidad:</strong> Coherencia, fluidez, seguridad, fundamentación, perplejidad, BLEU/ROUGE (texto), IS/FID (imágenes), Self-BLEU, precisión NLU.</li>
-                            <li><strong>Operacionales:</strong> Uptime, tasa de error, latencia (modelo/recuperación), rendimiento (solicitudes/tokens), utilización GPU/TPU.</li>
-                            <li><strong>Experiencia de Usuario:</strong> Tasa de adopción, frecuencia de uso, duración de sesión, longitud de consulta, feedback (likes/dislikes).</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="card">
-                    <h3 class="card-title"><i class="fas fa-balance-scale mr-2"></i>Importancia de Benchmarks y Evaluación Humana</h3>
-                    <div class="card-content">
-                        <p>Los benchmarks estandarizados (ImageNet, COCO, etc.) permiten comparaciones justas e impulsan la innovación. Los procedimientos estandarizados mejoran la reproducibilidad.</p>
-                        <p class="mt-2">La **evaluación humana** sigue siendo crucial para valorar cualidades subjetivas como la creatividad, coherencia y adecuación cultural, complementando las métricas cuantitativas. El juicio humano es fundamental donde las métricas no capturan el significado semántico completo.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="desafios" class="py-12">
-            <h2 class="section-title">7. Limitaciones y Desafíos Actuales</h2>
-            <p class="text-lg text-gray-700 mb-8 text-center max-w-3xl mx-auto">
-                La IA enfrenta desafíos cruciales: sesgos inherentes en los datos y algoritmos, el fenómeno de las "alucinaciones" o imprecisiones, preocupaciones sobre plagio y propiedad intelectual, el considerable consumo de recursos, y limitaciones fundamentales en la integración sensorial y el razonamiento complejo. Abordar estos puntos es vital para un desarrollo robusto y ético.
-            </p>
-            <div class="space-y-6">
-                <div class="card">
-                    <h3 class="card-title"><i class="fas fa-exclamation-triangle mr-2"></i>Sesgos (Bias)</h3>
-                    <div class="card-content">
-                        <p><strong>Fuentes:</strong> Recopilación de datos no representativos, etiquetado subjetivo, entrenamiento con datos desequilibrados, implementación sin pruebas diversas.</p>
-                        <p><strong>Tipos:</strong> De contenido, género, racial, cultural, selección, confirmación, medición, estereotipos, homogeneidad del grupo externo, anclaje, disponibilidad, fluidez.</p>
-                        <p><strong>Mitigación:</strong> Datos diversos, herramientas de detección, monitoreo continuo, supervisión humana.</p>
-                    </div>
-                </div>
-                <div class="card">
-                    <h3 class="card-title"><i class="fas fa-ghost mr-2"></i>Alucinaciones e Imprecisiones</h3>
-                    <div class="card-content">
-                        <p>Generación de información incorrecta o sin sentido (ej. GPT-4, Gemini). Contribuyen a la desinformación y errores en la toma de decisiones. La confianza excesiva (sesgo de automatización) es un riesgo. Modelos como Claude pueden ser excesivamente cautelosos.</p>
-                    </div>
-                </div>
-                <div class="card">
-                    <h3 class="card-title"><i class="fas fa-copyright mr-2"></i>Plagio y Propiedad Intelectual</h3>
-                    <div class="card-content">
-                        <p>Riesgo de fabricar investigación o no atribuir correctamente. DALL-E 3 intenta prohibir contenido con derechos de autor, pero puede ser eludido.</p>
-                    </div>
-                </div>
-                 <div class="card">
-                    <h3 class="card-title"><i class="fas fa-leaf mr-2"></i>Consumo de Recursos y Huella de Carbono</h3>
-                    <div class="card-content">
-                        <p>El entrenamiento de modelos grandes requiere inmensa capacidad computacional, con alto consumo de energía y agua. Modelos como LLaMA son intensivos en recursos.</p>
-                    </div>
-                </div>
-                <div class="card">
-                    <h3 class="card-title"><i class="fas fa-puzzle-piece mr-2"></i>Otros Desafíos Fundamentales</h3>
-                    <div class="card-content">
-                        <ul>
-                            <li><strong>Integración de Sentidos:</strong> LLMs no "oyen" ni "ven" directamente; pérdida de matices.</li>
-                            <li><strong>Pensamiento de Sistema 2:</strong> Limitaciones en pensamiento secuencial y conteo.</li>
-                            <li><strong>Aprendizaje durante Resolución:</strong> LLMs entrenados no aprenden de errores durante el uso.</li>
-                            <li><strong>Composicionalidad y Extrapolación:</strong> Dificultad con pequeños cambios de vocabulario.</li>
-                            <li><strong>Vacíos de Datos y Problemas de Persona.</strong></li>
-                        </ul>
-                         <p class="mt-2">La búsqueda de modelos más grandes amplifica sesgos y el consumo de recursos, exigiendo un "escalado responsable". Existe una brecha cognitiva: la IA simula comprensión pero carece de fundamentación real, lo que requiere IA Epistémica y supervisión humana.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="futuro" class="py-12 bg-amber-50 rounded-xl">
-            <h2 class="section-title">8. Tendencias Futuras y Direcciones de Investigación</h2>
-            <p class="text-lg text-gray-700 mb-8 text-center max-w-3xl mx-auto">
-                El futuro de la IA se perfila hacia sistemas más confiables, transparentes y conscientes de sus limitaciones. La IA Explicable (XAI), la IA Epistémica y el potencial disruptivo de la IA Cuántica son áreas clave de investigación que prometen transformar las capacidades y la interacción con la inteligencia artificial.
-            </p>
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div class="card">
-                    <h3 class="card-title"><i class="fas fa-user-shield mr-2"></i>IA Confiable (Trustworthy AI) y Explicable (XAI)</h3>
-                    <div class="card-content">
-                        <p>Transición hacia una IA más transparente. XAI busca sistemas cuyas acciones sean comprensibles (interpretabilidad global y explicabilidad local - LIME, Shapley). Enfoque en privacidad, seguridad, equidad, rendición de cuentas.</p>
-                    </div>
-                </div>
-                <div class="card">
-                    <h3 class="card-title"><i class="fas fa-question-circle mr-2"></i>IA Epistémica (Reconocimiento de la Ignorancia)</h3>
-                    <div class="card-content">
-                        <p>Enfatiza la necesidad de que los modelos aprendan de su ignorancia, reconociendo y gestionando la incertidumbre para mejorar la robustez en entornos del mundo real. Aborda alucinaciones y errores.</p>
-                    </div>
-                </div>
-                <div class="card">
-                    <h3 class="card-title"><i class="fas fa-atom mr-2"></i>IA Cuántica</h3>
-                    <div class="card-content">
-                        <p>Emplea qubits para cálculos complejos a velocidades exponenciales. Potencial para revolucionar la IA en el manejo de grandes datos y problemas intratables para la computación clásica.</p>
-                    </div>
-                </div>
-                <div class="card md:col-span-2 lg:col-span-3">
-                     <h3 class="card-title"><i class="fas fa-lightbulb mr-2"></i>Modelos Más Generales y Adaptables</h3>
-                    <div class="card-content">
-                        <p>Continúa la búsqueda de sistemas de IA más generales y capaces, basándose en trabajos como AlphaZero y MuZero. Avances en IA multimodal contribuirán a sistemas más versátiles y similares a los humanos.</p>
-                        <p class="mt-2">Estas tendencias indican un cambio hacia la fiabilidad y la interpretabilidad, integrando consideraciones éticas en el diseño. La IA Cuántica podría ser un cambio fundamental en el hardware subyacente.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="conclusion" class="py-12">
-            <h2 class="section-title">9. Conclusión</h2>
-             <div class="card max-w-3xl mx-auto">
-                <h3 class="card-title"><i class="fas fa-flag-checkered mr-2"></i>Recapitulación y Perspectivas Futuras</h3>
-                <div class="card-content">
-                    <p>Este informe ha trazado la evolución de la IA, desde el aprendizaje automático hasta las arquitecturas Transformer, la visión por computadora y la IA generativa, destacando modelos como AlphaFold y AlphaZero. El futuro de la IA se enfoca en ampliar capacidades mientras se abordan desafíos éticos y de recursos.</p>
-                    <p class="mt-2">La IA Confiable, Explicable y Epistémica, junto con el potencial de la IA Cuántica, marcan la pauta. La colaboración entre investigadores, desarrolladores y la sociedad será crucial para un futuro donde la IA sirva a la humanidad de manera responsable y efectiva.</p>
-                </div>
-            </div>
-        </section>
-
-    </main>
-
-    <footer class="bg-gray-800 text-white text-center py-8">
-        <p>&copy; <span id="currentYear"></span> Explorador Interactivo de Modelos de IA. Basado en el informe "Panorama Exhaustivo de los Modelos de IA Actuales".</p>
-    </footer>
-
-    <script>
-        // --- Data from Report ---
-        const llmModelsData = [
-            { name: "GPT-4o", developer: "OpenAI", features: "Multimodal (texto, imagen, audio, video), traducción en +50 idiomas", uses: "Chatbots, creación de contenido, codificación, soporte al cliente", mmlu_index: "0.748 / 41", outputSpeed: 138.6, ttft: 0.46, contextWindow: "130k", cost: 4.38, details: "GPT-4o es un modelo multimodal que ofrece un tiempo de respuesta rápido (232 ms) y traducción en más de 50 idiomas. Demostró una ligera ventaja en precisión sobre Amazon Nova Pro, aunque fue menos eficiente y más costoso." },
-            { name: "OpenAI o1", developer: "OpenAI", features: "Aprendizaje por refuerzo, cadenas de pensamiento, aprende de errores", uses: "Matemáticas, código, ciencia a nivel PhD", mmlu_index: "Supera GPT-4o", outputSpeed: null, ttft: null, contextWindow: null, cost: null, details: "Entrenado mediante aprendizaje por refuerzo, o1 desarrolla cadenas de pensamiento para resolver problemas complejos paso a paso y aprende de sus errores. Sobresale en matemáticas de competición, código y preguntas científicas de nivel de doctorado." },
-            { name: "OpenAI o3-mini", developer: "OpenAI", features: "Rentable, llamadas a funciones, salidas estructuradas, esfuerzo de razonamiento ajustable", uses: "Problemas básicos y complejos", mmlu_index: null, outputSpeed: null, ttft: null, contextWindow: null, cost: "Más barato", details: "o3-mini es el modelo más rentable de la serie 'o', con características populares para desarrolladores y configuraciones ajustables para el esfuerzo de razonamiento." },
-            { name: "Claude 3.7 Sonnet", developer: "Anthropic", features: "Modos de pensamiento estándar/extendido, equilibrio inteligencia/velocidad", uses: "Codificación, cargas de trabajo empresariales, recuperación de conocimiento, automatización de ventas", mmlu_index: null, outputSpeed: "2x Claude 2", ttft: null, contextWindow: null, cost: "Más bajo", details: "El LLM más reciente de Anthropic, ideal para cargas de trabajo empresariales, equilibrando inteligencia y velocidad." },
-            { name: "Claude 3 Opus", developer: "Anthropic", features: "Más inteligente, comprensión casi humana, capacidades de visión sofisticadas", uses: "Tareas complejas, prompts abiertos, escenarios imprevistos", mmlu_index: "Lidera benchmarks", outputSpeed: 28, ttft: 1.07, contextWindow: "200k", cost: 45, details: "El modelo más inteligente de la familia Claude, superando a sus pares en la mayoría de los benchmarks y exhibiendo niveles de comprensión y fluidez cercanos a los humanos. Costo: $15 (entrada) / $75 (salida) por 1M tokens." },
-            { name: "Gemini 2.5 Pro", developer: "Google", features: "Multimodal, ventana de contexto grande (1M), 'modelo pensante', razonamiento avanzado", uses: "Desarrollo web, resolución de problemas complejos, asistentes virtuales, búsqueda", mmlu_index: "0.858 / 69", outputSpeed: 154.3, ttft: 34.26, contextWindow: "1M", cost: 3.44, details: "Un modelo multimodal que maneja grandes conjuntos de datos, capaz de crear código y resolver problemas de razonamiento avanzado. Lidera en benchmarks de matemáticas y ciencias." },
-            { name: "DeepSeek-R1", developer: "DeepSeek", features: "Código abierto, compacto, rentable", uses: "Competencia con modelos de gigantes tecnológicos", mmlu_index: null, outputSpeed: null, ttft: null, contextWindow: null, cost: "Rentable", details: "Un modelo de IA de código abierto que demuestra que los modelos compactos y rentables pueden competir con los gigantes tecnológicos." },
-            { name: "Grok 3", developer: "xAI", features: "Aprendizaje por refuerzo, evalúa y corrige errores, conversaciones profundas", uses: "Chatbots, asistentes personales, atención al cliente", mmlu_index: null, outputSpeed: null, ttft: null, contextWindow: null, cost: null, details: "Entrenado con aprendizaje por refuerzo, Grok 3 puede evaluar procesos, corregir errores y ajustar su rendimiento. Impulsa el chatbot Grok." },
-            { name: "LLaMA 3 70b", developer: "Meta", features: "Bajo costo computacional, escalable, generación/comprensión de lenguaje de vanguardia", uses: "NLP, IA conversacional, investigación, codificación, uso de herramientas, multilingüe", mmlu_index: "44% (raz.)", outputSpeed: 130582, ttft: null, contextWindow: null, cost: 0.315, details: "Ofrece capacidades de vanguardia con menor costo computacional. Destaca en codificación y soporte multilingüe. Costo: $0.23 (entrada) / $0.40 (salida) por 1M tokens." },
-            { name: "PaLM 2", developer: "Google AI", features: "Razonamiento de sentido común, proficiencia en codificación, multilingüe", uses: "Resolución de problemas técnicos, IA conversacional, sistemas de recomendación", mmlu_index: null, outputSpeed: null, ttft: null, contextWindow: null, cost: null, details: "Destaca en razonamiento de sentido común y codificación, con sólidas capacidades multilingües." },
-            { name: "Cohere", developer: "Cohere", features: "Personalización empresarial, comprensión del lenguaje", uses: "Chatbots a medida, análisis de datos de clientes", mmlu_index: null, outputSpeed: null, ttft: null, contextWindow: null, cost: null, details: "Un potente LLM diseñado específicamente para uso empresarial, con capacidad de personalización." },
-            { name: "Ernie", developer: "Baidu", features: "Optimizado para mandarín y dialectos chinos", uses: "Chatbots para hablantes de chino, traducción automática", mmlu_index: null, outputSpeed: null, ttft: null, contextWindow: null, cost: null, details: "Impulsa el chatbot de Baidu, optimizado para el idioma chino." },
-            { name: "Falcon LLM", developer: "TII", features: "Código abierto, gran cantidad de parámetros (40B, 180B)", uses: "Generación de contenido", mmlu_index: null, outputSpeed: null, ttft: null, contextWindow: null, cost: null, details: "Un modelo de IA de código abierto con versiones de 40B y 180B parámetros." },
-            { name: "NLLB-200", developer: "Meta AI", features: "Traducción entre 200 idiomas (incl. africanos)", uses: "Traducción y localización", mmlu_index: null, outputSpeed: null, ttft: null, contextWindow: null, cost: null, details: "Traduce entre 200 idiomas, incluyendo muchos previamente no compatibles." }
-        ];
-
-        const cvModelsData = [
-            { name: "AlexNet", year: 2012, innovation: "Activación ReLU, Dropout, Aumentación de Datos", uses: "Clasificación de imágenes", accuracy: 57.0, map: null, speed: 3.1, params: "N/A", details: "Revolucionó la clasificación de imágenes en ImageNet." },
-            { name: "VGG-16", year: 2014, innovation: "Profundidad con filtros 3x3, Arquitectura Uniforme", uses: "Clasificación de imágenes, Transfer Learning", accuracy: 70.5, map: null, speed: 9.4, params: "N/A", details: "Destacó la importancia de la profundidad en las redes." },
-            { name: "ResNet-50", year: 2015, innovation: "Aprendizaje Residual, Conexiones de Salto", uses: "Clasificación de imágenes", accuracy: 75.8, map: null, speed: 11.4, params: "N/A", details: "Permitió el entrenamiento de redes extremadamente profundas." },
-            { name: "DenseNet-201", year: 2016, innovation: "Conectividad Densa, Reutilización de Características", uses: "Clasificación de imágenes, Eficiencia de Parámetros", accuracy: 77.0, map: null, speed: 32.6, params: "N/A", details: "Promovió la reutilización de características y la eficiencia." },
-            { name: "EfficientNet-B7", year: 2019, innovation: "Escalado Compuesto, Búsqueda de Arquitectura Neuronal", uses: "Clasificación de imágenes, Dispositivos Móviles", accuracy: 84.3, map: null, speed: null, params: "Menos", details: "Alta precisión con menos parámetros y costo computacional." },
-            { name: "ConvNeXt", year: 2022, innovation: "Diseño Modernizado, Inspiración Transformer", uses: "Clasificación, Detección, Segmentación", accuracy: "Cierra brecha con ViT", map: null, speed: null, params: "N/A", details: "Evolución moderna de CNNs, inspirada en Transformers." },
-            { name: "Faster R-CNN", year: 2015, innovation: "Region Proposal Network (RPN), Arquitectura Unificada", uses: "Detección de objetos", accuracy: null, map: null, speed: "En tiempo real", params: "N/A", details: "Agilizó la detección de objetos con RPN." },
-            { name: "Mask R-CNN", year: 2017, innovation: "Segmentación de Instancias, ROIAlign", uses: "Segmentación de instancias, Detección", accuracy: null, map: null, speed: null, params: "N/A", details: "Extendió Faster R-CNN para segmentación de instancias." },
-            { name: "YOLOv8n", year: 2023, innovation: "Versatilidad ampliada (segmentación, clasificación, pose)", uses: "Detección de objetos, Segmentación de instancias", accuracy: null, map: null, speed: 4.1, params: "3.2M", details: "Amplió la versatilidad a segmentación, clasificación y pose." },
-            { name: "YOLOv9 Gelan-e", year: 2024, innovation: "Programmable Gradient Information (PGI), GELAN", uses: "Detección de objetos", accuracy: null, map: 0.935, speed: null, params: "N/A", details: "Introdujo PGI y GELAN para mejorar eficiencia y precisión." },
-            { name: "YOLOv11n", year: 2024, innovation: "Módulos modernos (C2PSA), optimización de eficiencia", uses: "Detección de objetos, Análisis de diseño de documentos", accuracy: null, map: null, speed: 2.4, params: "2.6M", details: "Integró módulos modernos como C2PSA, destacando por su velocidad." },
-            { name: "YOLOv12l", year: 2025, innovation: "Area Attention (A2), R-ELAN, diseño centrado en atención", uses: "Detección de objetos en tiempo real, Análisis de diseño de documentos", accuracy: null, map: 0.931, speed: null, params: "26.4M", details: "Introduce Area Attention y R-ELAN para detección de vanguardia." },
-            { name: "U-Net", year: "N/A", innovation: "Arquitectura Codificador-Decodificador Simétrica, Skip Connections", uses: "Segmentación de imágenes biomédicas, teledetección", accuracy: null, map: null, speed: null, params: "N/A", details: "Optimizado para segmentación precisa a nivel de píxel." },
-            { name: "SAM", year: "N/A", innovation: "Vision Transformer (ViT), Segmentación 'Promptable'", uses: "Segmentación de objetos, Edición de imágenes", accuracy: null, map: null, speed: "~400-650", params: "N/A", details: "Permite segmentación 'cero-shot' y es altamente rentable para lotes." }
-        ];
-
-        const genAIModelsData = [
-            { name: "GANs", developer: "Varios", modality: "Imagen, Audio, Datos", capabilities: "Creación de datos sintéticos realistas", features: "Generador y Discriminador en juego competitivo", notes: "Puede producir imágenes borrosas (algunos casos), difícil de entrenar." },
-            { name: "VAEs", developer: "Varios", modality: "Imagen, Datos", capabilities: "Reducción de ruido, compresión, detección de anomalías, reconocimiento facial", features: "Codifica datos probabilísticamente en espacio latente", notes: "Puede producir imágenes más borrosas que GANs." },
-            { name: "Stable Diffusion", developer: "Stability AI", modality: "Imagen", capabilities: "Texto a imagen, Inpainting, Outpainting", features: "Código abierto, personalizable, bajo consumo de recursos, ejecución local", notes: "Dependencia de calidad de prompts, sesgos, imprecisiones anatómicas." },
-            { name: "DALL-E 3", developer: "OpenAI", modality: "Imagen", capabilities: "Texto a imagen", features: "Comprensión contextual mejorada, integrado con ChatGPT", notes: "Dificultad con prompts negativos/causalidad, puede negarse a generar contenido fáctico." },
-            { name: "Sora", developer: "OpenAI", modality: "Video", capabilities: "Texto a video (clips fotorrealistas)", features: "Genera videos temporalmente coherentes y detallados", notes: "Modelo muy reciente." },
-            { name: "GPT-4o", developer: "OpenAI", modality: "Multimodal", capabilities: "Generación de texto, traducción, multimodal", features: "Procesamiento rápido, traducción en +50 idiomas", notes: "Multimodalidad integral." },
-            { name: "Gemini 2.5 Pro", developer: "Google", modality: "Multimodal", capabilities: "Generación de código, razonamiento avanzado", features: "Ventana de contexto de 1M tokens, 'modelo pensante'", notes: "Multimodalidad integral, razonamiento avanzado." },
-            { name: "NeRFs", developer: "Varios", modality: "3D", capabilities: "Generación de escenas 3D a partir de imágenes 2D", features: "Modela la radiancia desde cada punto en el espacio", notes: "N/A" },
-            { name: "RNNs", developer: "Varios", modality: "Secuencial", capabilities: "Generación de datos secuenciales (Texto, Audio)", features: "Mantiene memoria de entradas anteriores", notes: "Menos eficientes que Transformers para dependencias largas." },
-            { name: "Flow Models", developer: "Varios", modality: "Datos", capabilities: "Generación de datos, estimación de densidad", features: "Transformaciones invertibles a espacio latente", notes: "N/A" }
-        ];
-        
-        const specializedModelsData = [
-            { name: "AlphaFold", developer: "DeepMind", paradigm: "Aprendizaje Profundo", domain: "Predicción de estructuras de proteínas", impact: "Predice estructuras 3D de proteínas con precisión experimental, revolucionando la biología y la medicina.", notes: "Correlación débil con el impacto de mutaciones en estabilidad/función." },
-            { name: "AlphaGo", developer: "DeepMind", paradigm: "Aprendizaje por Refuerzo", domain: "Juegos (Go)", impact: "Primer AI en derrotar a un profesional humano de Go.", notes: "Aprendió de millones de partidas de aficionados." },
-            { name: "AlphaZero", developer: "DeepMind", paradigm: "Aprendizaje por Refuerzo", domain: "Juegos (Ajedrez, Shogi, Go), Optimización de Algoritmos", impact: "Aprendizaje desde cero, dominio de juegos, descubrimiento de algoritmos más rápidos.", notes: "No es eficiente en datos, experimentación costosa." },
-            { name: "MuZero", developer: "DeepMind", paradigm: "Aprendizaje por Refuerzo", domain: "Juegos (Ajedrez, Shogi, Go, Atari), Compresión de Video", impact: "Aprende el modelo del entorno sin reglas explícitas, compresión eficiente de video.", notes: "Problemas de eficiencia de datos y costo computacional." },
-            { name: "IA Predictiva", developer: "Varios", paradigm: "Aprendizaje Supervisado/Estadístico", domain: "Previsión de demanda, evaluación de riesgos", impact: "Pronostica resultados futuros con técnicas estadísticas.", notes: "Depende de la calidad y representatividad de los datos." },
-            { name: "IA Asistencial", developer: "Varios", paradigm: "Aprendizaje Supervisado, NLP", domain: "Asistentes virtuales, sistemas de recomendación, chatbots", impact: "Mejora la productividad humana, interacciones humanizadas.", notes: "Requiere datos etiquetados para entrenamiento supervisado." }
-        ];
-
-        // --- General Utility Functions ---
-        function populateExpandableCards(containerId, dataArray, iconClass = 'fas fa-microchip') {
-            const container = document.getElementById(containerId);
-            if (!container) return;
-            container.innerHTML = ''; 
-
-            dataArray.forEach((item, index) => {
-                const card = document.createElement('div');
-                card.className = 'card flex flex-col'; // Added flex for consistent button placement
-                
-                let summaryHtml = '';
-                if (item.details && (containerId === 'llmModelsContainer' || containerId === 'cvModelsContainer')) {
-                     summaryHtml = `<p class="text-gray-600 text-sm mb-2 flex-grow">${item.details.substring(0,120)}...</p>`;
-                } else if (item.capabilities && containerId === 'genAIModelsContainer') {
-                     summaryHtml = `<p class="text-gray-600 text-sm mb-2 flex-grow">${item.capabilities.substring(0,120)}...</p>`;
-                } else if (item.impact && containerId === 'specializedModelsContainer') {
-                     summaryHtml = `<p class="text-gray-600 text-sm mb-2 flex-grow">${item.impact.substring(0,120)}...</p>`;
-                }
-
-
-                let detailsContent = '';
-                for (const key in item) {
-                    if (item.hasOwnProperty(key) && key !== 'name' && key !== 'developer' && item[key] !== null && item[key] !== undefined && String(item[key]).trim() !== '' && String(item[key]) !== 'N/A') {
-                        let keyDisplay = key.charAt(0).toUpperCase() + key.slice(1);
-                        // Simple replacements for display
-                        if (key === 'mmlu_index') keyDisplay = 'MMLU/Índice Intel.';
-                        if (key === 'outputSpeed') keyDisplay = 'Velocidad (tokens/s)';
-                        if (key === 'ttft') keyDisplay = 'Latencia (TTFT)';
-                        if (key === 'contextWindow') keyDisplay = 'Ventana Contexto';
-                        if (key === 'cost') keyDisplay = 'Costo (USD/1M tk)';
-                        if (key === 'uses') keyDisplay = 'Usos Principales';
-                        if (key === 'features') keyDisplay = 'Características Clave';
-                        if (key === 'notes') keyDisplay = 'Notas/Limitaciones';
-                        if (key === 'modality') keyDisplay = 'Modalidad Principal';
-                        if (key === 'capabilities') keyDisplay = 'Capacidades Generativas Clave';
-                        if (key === 'paradigm') keyDisplay = 'Paradigma IA';
-                        if (key === 'domain') keyDisplay = 'Dominio/Aplicación Principal';
-                        if (key === 'impact') keyDisplay = 'Logro/Impacto Clave';
-                         if (key === 'params') keyDisplay = 'Parámetros';
-
-
-                        detailsContent += `<p><strong>${keyDisplay}:</strong> ${item[key]}</p>`;
-                    }
-                }
-
-                card.innerHTML = `
-                    <div class="flex-grow">
-                        <h4 class="card-title"><i class="${iconClass} mr-2"></i>${item.name} ${item.developer ? `(${item.developer})` : ''}</h4>
-                        ${summaryHtml}
-                    </div>
-                    <div class="mt-auto"> <button class="expand-button" data-target="details-${containerId}-${index}">Ver más <i class="fas fa-chevron-down ml-1 text-xs"></i></button>
-                        <div id="details-${containerId}-${index}" class="details card-content">
-                            ${detailsContent}
+                <div class="era-content content-hidden">
+                    <p class="mb-4"><span class="font-semibold">Contexto:</span> Foros de discusión, correo electrónico, sitios web personales, chat rooms. Internet era más un nicho.</p>
+                    <p class="mb-4"><span class="font-semibold">Formatos Clave:</span> Cadenas de correos (hoaxes, historias virales), animaciones Flash sencillas, emoticonos ASCII art.</p>
+                    <h4 class="text-xl font-bold text-indigo-500 mb-3">Memes Icónicos:</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-gray-50 p-4 rounded-lg shadow-sm">
+                            <img src="https://placehold.co/300x200/e0e0e0/555555?text=Dancing+Baby" alt="Imagen del Dancing Baby" class="w-full h-40 object-cover rounded-md mb-3">
+                            <h5 class="font-semibold text-lg mb-1">Dancing Baby (Oogachaka Baby)</h5>
+                            <p class="text-sm text-gray-600">Uno de los primeros fenómenos virales en animación 3D, ampliamente compartido por correo electrónico.</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg shadow-sm">
+                            <img src="https://placehold.co/300x200/e0e0e0/555555?text=All+Your+Base" alt="Imagen de All Your Base Are Belong To Us" class="w-full h-40 object-cover rounded-md mb-3">
+                            <h5 class="font-semibold text-lg mb-1">All Your Base Are Belong To Us</h5>
+                            <p class="text-sm text-gray-600">Un error de traducción de un videojuego que se volvió una frase icónica en foros y firmas de correo.</p>
                         </div>
                     </div>
-                `;
-                container.appendChild(card);
-            });
-        }
-        
-        let activeCharts = {};
-        function createBarChart(canvasId, labels, data, chartLabel, backgroundColor = 'rgba(160, 82, 45, 0.6)', borderColor = 'rgba(160, 82, 45, 1)') {
-            const ctx = document.getElementById(canvasId)?.getContext('2d');
-            if (!ctx) return null;
+                </div>
+            </div>
 
-            if (activeCharts[canvasId]) {
-                activeCharts[canvasId].destroy();
-            }
+            <div class="card era-section" id="era-2">
+                <div class="section-header timeline-era-title p-4 bg-gray-50 rounded-lg mb-4 hover:bg-gray-100 transition-colors duration-300">
+                    <h3 class="text-2xl font-semibold text-gray-800">Era 2: La Edad de Oro de los Foros y Primeros Videos Virales (Mediados de los 2000)</h3>
+                    <svg class="w-6 h-6 text-gray-600 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+                <div class="era-content content-hidden">
+                    <p class="mb-4"><span class="font-semibold">Contexto:</span> YouTube, MySpace, 4chan, Reddit, LiveJournal. La velocidad de conexión mejoró y el contenido multimedia se hizo más accesible.</p>
+                    <p class="mb-4"><span class="font-semibold">Formatos Clave:</span> Videos virales caseros, "image macros" (imágenes con texto encima), rage comics.</p>
+                    <h4 class="text-xl font-bold text-indigo-500 mb-3">Memes Icónicos:</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-gray-50 p-4 rounded-lg shadow-sm">
+                            <img src="https://placehold.co/300x200/e0e0e0/555555?text=Charlie+Bit+My+Finger" alt="Imagen de Charlie Bit My Finger" class="w-full h-40 object-cover rounded-md mb-3">
+                            <h5 class="font-semibold text-lg mb-1">Charlie Bit My Finger</h5>
+                            <p class="text-sm text-gray-600">Un video casero que se convirtió en un fenómeno mundial de la inocencia infantil.</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg shadow-sm">
+                            <img src="https://placehold.co/300x200/e0e0e0/555555?text=Rickroll" alt="Imagen de Rick Astley para Rickrolling" class="w-full h-40 object-cover rounded-md mb-3">
+                            <h5 class="font-semibold text-lg mb-1">Rickrolling</h5>
+                            <p class="text-sm text-gray-600">La icónica broma de redirigir a un video de Rick Astley, "Never Gonna Give You Up".</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg shadow-sm">
+                            <img src="https://placehold.co/300x200/e0e0e0/555555?text=Lolcats" alt="Imagen de un Lolcat" class="w-full h-40 object-cover rounded-md mb-3">
+                            <h5 class="font-semibold text-lg mb-1">Lolcats</h5>
+                            <p class="text-sm text-gray-600">Imágenes de gatos con leyendas humorísticas y errores gramaticales intencionales.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-            activeCharts[canvasId] = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: chartLabel,
-                        data: data,
-                        backgroundColor: backgroundColor,
-                        borderColor: borderColor,
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { beginAtZero: true, ticks: { color: '#3D3B3A' } },
-                        x: { ticks: { color: '#3D3B3A', callback: function(value) {
-                                const label = this.getLabelForValue(value);
-                                return label.length > 15 ? label.substring(0,15) + '...' : label;
-                            } 
-                        }}
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.dataset.label || '';
-                                    if (label) { label += ': '; }
-                                    if (context.parsed.y !== null) {
-                                        label += context.parsed.y;
-                                    }
-                                    return label;
-                                }
-                            }
-                        },
-                        legend: { display: true, labels: { color: '#3D3B3A'} }
-                    }
-                }
-            });
-            return activeCharts[canvasId];
-        }
+            <div class="card era-section" id="era-3">
+                <div class="section-header timeline-era-title p-4 bg-gray-50 rounded-lg mb-4 hover:bg-gray-100 transition-colors duration-300">
+                    <h3 class="text-2xl font-semibold text-gray-800">Era 3: La Explosión de las Redes Sociales y la Conciencia Política (Principios de los 2010)</h3>
+                    <svg class="w-6 h-6 text-gray-600 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+                <div class="era-content content-hidden">
+                    <p class="mb-4"><span class="font-semibold">Contexto:</span> Facebook, Twitter, Tumblr, Instagram. Las redes sociales se vuelven el principal motor de difusión, permitiendo a millones de usuarios crear y compartir contenido fácilmente.</p>
+                    <p class="mb-4"><span class="font-semibold">Formatos Clave:</span> GIFs animados, "reaction memes" (memes de reacción), memes políticos y de crítica social.</p>
+                    <h4 class="text-xl font-bold text-indigo-500 mb-3">Memes Icónicos:</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-gray-50 p-4 rounded-lg shadow-sm">
+                            <img src="https://placehold.co/300x200/e0e0e0/555555?text=Doge" alt="Imagen del meme Doge" class="w-full h-40 object-cover rounded-md mb-3">
+                            <h5 class="font-semibold text-lg mb-1">Doge</h5>
+                            <p class="text-sm text-gray-600">El perro Shiba Inu con texto en "broken English" que expresaba asombro o perplejidad.</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg shadow-sm">
+                            <img src="https://placehold.co/300x200/e0e0e0/555555?text=Distracted+Boyfriend" alt="Imagen del meme Distracted Boyfriend" class="w-full h-40 object-cover rounded-md mb-3">
+                            <h5 class="font-semibold text-lg mb-1">Distracted Boyfriend</h5>
+                            <p class="text-sm text-gray-600">Una imagen que se convirtió en una plantilla universal para representar dilemas y distracciones.</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg shadow-sm">
+                            <img src="https://placehold.co/300x200/e0e0e0/555555?text=Grumpy+Cat" alt="Imagen del meme Grumpy Cat" class="w-full h-40 object-cover rounded-md mb-3">
+                            <h5 class="font-semibold text-lg mb-1">Grumpy Cat</h5>
+                            <p class="text-sm text-gray-600">La gata de expresión perpetuamente enfadada, un ícono de la cultura meme.</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg shadow-sm">
+                            <img src="https://placehold.co/300x200/e0e0e0/555555?text=Rana+Pepe" alt="Imagen del meme Rana Pepe" class="w-full h-40 object-cover rounded-md mb-3">
+                            <h5 class="font-semibold text-lg mb-1">La Rana Pepe</h5>
+                            <p class="text-sm text-gray-600">Un meme que, según "Memeceno", fue cooptado y su significado transformado, mostrando el impacto político de los memes.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-        function populateTable(tableBodyId, dataArray, columnsConfig) {
-            const tableBody = document.getElementById(tableBodyId);
-            if (!tableBody) return;
-            tableBody.innerHTML = ''; 
+            <div class="card era-section" id="era-4">
+                <div class="section-header timeline-era-title p-4 bg-gray-50 rounded-lg mb-4 hover:bg-gray-100 transition-colors duration-300">
+                    <h3 class="text-2xl font-semibold text-gray-800">Era 4: La Era del Video Corto y la Plataforma (Mediados de los 2010 - Actualidad)</h3>
+                    <svg class="w-6 h-6 text-gray-600 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+                <div class="era-content content-hidden">
+                    <p class="mb-4"><span class="font-semibold">Contexto:</span> TikTok, Instagram Reels, YouTube Shorts. El contenido en video corto, la música y los filtros dominan la creación y difusión de memes. La personalización de algoritmos impulsa la viralidad.</p>
+                    <p class="mb-4"><span class="font-semibold">Formatos Clave:</span> Videos cortos sincronizados con audio (trends), desafíos virales, filtros de realidad aumentada.</p>
+                    <h4 class="text-xl font-bold text-indigo-500 mb-3">Memes Icónicos:</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-gray-50 p-4 rounded-lg shadow-sm">
+                            <img src="https://placehold.co/300x200/e0e0e0/555555?text=Dans+L'avion" alt="Imagen del meme Dans L'avion (Drake)" class="w-full h-40 object-cover rounded-md mb-3">
+                            <h5 class="font-semibold text-lg mb-1">Dans L'avion (Drake)</h5>
+                            <p class="text-sm text-gray-600">El meme de Drake con la camisa de cuadros, un ejemplo de cómo una plantilla simple se vuelve versátil.</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg shadow-sm">
+                            <img src="https://placehold.co/300x200/e0e0e0/555555?text=Ecce+Homo" alt="Imagen del Ecce Homo de Borja" class="w-full h-40 object-cover rounded-md mb-3">
+                            <h5 class="font-semibold text-lg mb-1">Ecce Homo de Borja</h5>
+                            <p class="text-sm text-gray-600">Aunque es más antiguo, su revitalización y constante reaparición demuestra la resiliencia de ciertos memes, especialmente en el ámbito hispanohablante.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-            dataArray.forEach(item => {
-                const row = tableBody.insertRow();
-                columnsConfig.forEach(colConfig => {
-                    const cell = row.insertCell();
-                    let value = item[colConfig.key];
-                    if (typeof value === 'number' && !Number.isInteger(value) && colConfig.toFixed !== undefined) {
-                        value = parseFloat(value.toFixed(colConfig.toFixed));
-                    }
-                     cell.textContent = (value === null || value === undefined || String(value).trim() === '') ? 'N/A' : value;
-                    if (colConfig.numeric) cell.classList.add('text-right');
-                });
-            });
-        }
-        
-        let currentSortState = {};
+        <section class="card mb-8">
+            <h2 class="text-3xl font-bold text-indigo-600 mb-4">¡Tu Meme Interior!</h2>
+            <p class="mb-4">¿Cuál es tu meme favorito de todos los tiempos? ¿Crees que los memes son arte, humor o una nueva forma de comunicación? ¡Comparte tus pensamientos con nosotros!</p>
+            <textarea id="meme-thoughts" class="w-full p-3 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-500" rows="5" placeholder="Escribe aquí tu meme favorito o tus reflexiones..."></textarea>
+            <button id="submit-thoughts" class="btn-primary">Enviar</button>
+            <p id="submission-message" class="mt-3 text-green-600 hidden">¡Gracias por tu contribución!</p>
+        </section>
 
-        function filterAndSortTable(tableId, dataArray, columnsConfig, filterInputId) {
-            const filterInput = document.getElementById(filterInputId);
-            const query = filterInput ? filterInput.value.toLowerCase() : "";
-            
-            let processedData = [...dataArray];
+        <section class="card mb-8 text-center">
+            <h2 class="text-3xl font-bold text-indigo-600 mb-4">Explora más</h2>
+            <p class="mb-4">Conoce el libro "<span class="font-semibold">Memeceno: la era del meme en internet</span>" y profundiza en estas fascinantes eras.</p>
+            <p class="mb-4">Descubre cómo los memes impactan la política, la sociedad y el marketing en nuestras secciones especiales.</p>
+            <a href="#" class="btn-primary inline-block">Más información sobre "Memeceno"</a>
+        </section>
 
-            if (query) {
-                processedData = processedData.filter(item => 
-                    columnsConfig.some(col => 
-                        String(item[col.key]).toLowerCase().includes(query)
-                    )
-                );
-            }
+        <footer class="text-center py-6 text-gray-500 text-sm">
+            <p>&copy; 2025 MemeTime. Inspirado en "Memeceno: la era del meme en internet".</p>
+            <p>Aviso Legal | Política de Privacidad</p>
+        </footer>
+    </div>
 
-            const sortInfo = currentSortState[tableId];
-            if (sortInfo && sortInfo.key) {
-                processedData.sort((a, b) => {
-                    let valA = a[sortInfo.key];
-                    let valB = b[sortInfo.key];
-
-                    if (typeof valA === 'string') valA = valA.toLowerCase();
-                    if (typeof valB === 'string') valB = valB.toLowerCase();
-                    
-                    if (valA === null || valA === undefined || String(valA) === 'N/A' || String(valA).trim() === '') valA = sortInfo.direction === 'asc' ? Infinity : -Infinity;
-                    if (valB === null || valB === undefined || String(valB) === 'N/A' || String(valB).trim() === '') valB = sortInfo.direction === 'asc' ? Infinity : -Infinity;
-                    
-                    // Attempt to convert to number if possible for numeric sort
-                    const numA = parseFloat(valA);
-                    const numB = parseFloat(valB);
-
-                    if (!isNaN(numA) && !isNaN(numB)) {
-                        valA = numA;
-                        valB = numB;
-                    }
-
-                    if (valA < valB) return sortInfo.direction === 'asc' ? -1 : 1;
-                    if (valA > valB) return sortInfo.direction === 'asc' ? 1 : -1;
-                    return 0;
-                });
-            }
-            populateTable(`${tableId}Body`, processedData, columnsConfig);
-        }
-
-        function setupTableInteractions(tableId, dataArray, columnsConfig, filterInputId) {
-            const tableElement = document.getElementById(tableId);
-            if (!tableElement) return;
-
-            // Initial population
-            filterAndSortTable(tableId, dataArray, columnsConfig, filterInputId);
-
-            // Filter listener
-            const filterInput = document.getElementById(filterInputId);
-            if (filterInput) {
-                filterInput.addEventListener('keyup', () => filterAndSortTable(tableId, dataArray, columnsConfig, filterInputId));
-            }
-
-            // Sort listeners
-            tableElement.querySelectorAll('thead th.sortable').forEach(th => {
-                th.addEventListener('click', () => {
-                    const sortKey = th.dataset.sortKey;
-                    const currentTableSort = currentSortState[tableId] || {};
-                    const direction = (currentTableSort.key === sortKey && currentTableSort.direction === 'asc') ? 'desc' : 'asc';
-                    
-                    currentSortState[tableId] = { key: sortKey, direction: direction };
-
-                    // Update sort icons
-                    tableElement.querySelectorAll('thead th.sortable i').forEach(icon => icon.className = 'fas fa-sort ml-1 text-gray-400');
-                    th.querySelector('i').className = `fas fa-sort-${direction === 'asc' ? 'up' : 'down'} ml-1 text-gray-400`;
-                    
-                    filterAndSortTable(tableId, dataArray, columnsConfig, filterInputId);
-                });
-            });
-        }
-
-
-        // --- Event Listeners and Initialization ---
+    <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const mobileMenuButton = document.getElementById('mobile-menu-button');
-            const mobileMenu = document.getElementById('mobile-menu');
-            if (mobileMenuButton && mobileMenu) {
-                mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
-            }
-            
-            const navLinks = document.querySelectorAll('.nav-link');
-            navLinks.forEach(link => {
-                link.addEventListener('click', function(e) {
-                    if (this.hash !== "") {
-                        e.preventDefault();
-                        const targetElement = document.querySelector(this.hash);
-                        if (targetElement) {
-                            window.scrollTo({ top: targetElement.offsetTop - 70, behavior: 'smooth' });
-                        }
-                    }
-                    navLinks.forEach(l => l.classList.remove('active'));
-                    this.classList.add('active');
-                    if (mobileMenu && !mobileMenu.classList.contains('hidden')) mobileMenu.classList.add('hidden');
+            // Get all era sections
+            const eraSections = document.querySelectorAll('.era-section');
+
+            eraSections.forEach(section => {
+                const header = section.querySelector('.section-header');
+                const content = section.querySelector('.era-content');
+
+                // Add click listener to each header
+                header.addEventListener('click', () => {
+                    // Toggle the 'content-hidden' class to show/hide content
+                    content.classList.toggle('content-hidden');
+                    // Toggle 'active' class for arrow rotation
+                    header.classList.toggle('active');
                 });
             });
 
-            const sections = document.querySelectorAll('section');
-            window.addEventListener('scroll', () => {
-                let current = '';
-                sections.forEach(section => {
-                    if (pageYOffset >= section.offsetTop - 80) current = section.id;
-                });
-                navLinks.forEach(link => {
-                    link.classList.remove('active');
-                    if (link.getAttribute('href') === `#${current}`) link.classList.add('active');
-                });
-            });
+            // Handle submission for "Tu Meme Interior"
+            const submitButton = document.getElementById('submit-thoughts');
+            const memeThoughtsTextarea = document.getElementById('meme-thoughts');
+            const submissionMessage = document.getElementById('submission-message');
 
-            populateExpandableCards('llmModelsContainer', llmModelsData, 'fas fa-comments');
-            populateExpandableCards('cvModelsContainer', cvModelsData, 'fas fa-eye');
-            
-            document.body.addEventListener('click', function(event) {
-                const button = event.target.closest('.expand-button');
-                if (button) {
-                    const targetId = button.dataset.target;
-                    const detailsDiv = document.getElementById(targetId);
-                    const icon = button.querySelector('i');
-                    if (detailsDiv) {
-                        detailsDiv.classList.toggle('hidden');
-                        icon.classList.toggle('fa-chevron-down');
-                        icon.classList.toggle('fa-chevron-up');
-                        button.innerHTML = detailsDiv.classList.contains('hidden') ? `Ver más <i class="fas fa-chevron-down ml-1 text-xs"></i>` : `Ver menos <i class="fas fa-chevron-up ml-1 text-xs"></i>`;
-                    }
+            submitButton.addEventListener('click', () => {
+                const thoughts = memeThoughtsTextarea.value.trim();
+                if (thoughts) {
+                    console.log('Pensamientos del usuario sobre memes:', thoughts);
+                    submissionMessage.classList.remove('hidden');
+                    memeThoughtsTextarea.value = ''; // Clear the textarea
+                    setTimeout(() => {
+                        submissionMessage.classList.add('hidden');
+                    }, 3000); // Hide message after 3 seconds
+                } else {
+                    alert('Por favor, escribe algo antes de enviar.'); // Using alert for simple client-side validation as per instructions.
                 }
             });
-
-            const llmTableColumns = [
-                { key: 'name', name: 'Modelo' }, { key: 'developer', name: 'Desarrollador' },
-                { key: 'mmlu_index', name: 'MMLU/Índice Intel.', numeric: false }, { key: 'outputSpeed', name: 'Velocidad (tokens/s)', numeric: true, toFixed: 1 },
-                { key: 'ttft', name: 'Latencia (TTFT)', numeric: true, toFixed: 2 }, { key: 'contextWindow', name: 'Ventana Contexto' },
-                { key: 'cost', name: 'Costo (USD/1M tk)', numeric: true, toFixed: 2 }
-            ];
-            setupTableInteractions('llmTable', llmModelsData, llmTableColumns, 'llmTableFilter');
-
-            const llmsForMMLUChart = llmModelsData.filter(m => m.mmlu_index && (parseFloat(String(m.mmlu_index).split('/')[0]) || parseFloat(String(m.mmlu_index).split('/')[1]))).sort((a,b) => (parseFloat(String(b.mmlu_index).split('/')[0]) || parseFloat(String(b.mmlu_index).split('/')[1])) - (parseFloat(String(a.mmlu_index).split('/')[0]) || parseFloat(String(a.mmlu_index).split('/')[1]))).slice(0,10);
-            createBarChart('llmMMLUChart', 
-                llmsForMMLUChart.map(m => m.name), 
-                llmsForMMLUChart.map(m => parseFloat(String(m.mmlu_index).split('/')[0].trim()) || parseFloat(String(m.mmlu_index).split('/')[1].trim()) ), 
-                'MMLU / Índice de Inteligencia'
-            );
-            
-            const llmsForSpeedChart = llmModelsData.filter(m => m.outputSpeed).sort((a,b) => b.outputSpeed - a.outputSpeed).slice(0,10);
-            createBarChart('llmSpeedChart', 
-                llmsForSpeedChart.map(m => m.name), 
-                llmsForSpeedChart.map(m => m.outputSpeed), 
-                'Velocidad de Salida (Tokens/s)', 'rgba(210, 105, 30, 0.6)', 'rgba(210, 105, 30, 1)'
-            );
-
-            const cvTableColumns = [
-                { key: 'name', name: 'Modelo' }, { key: 'year', name: 'Año', numeric: true },
-                { key: 'innovation', name: 'Innovación Clave' }, { key: 'accuracy', name: 'Precisión Top-1 (ImageNet)', numeric: true, toFixed: 1 },
-                { key: 'map', name: 'mAP@0.50', numeric: true, toFixed: 3 }, { key: 'speed', name: 'Vel. Inferencia (ms)', numeric: true, toFixed: 1 },
-                { key: 'params', name: 'Parámetros'}
-            ];
-            setupTableInteractions('cvTable', cvModelsData, cvTableColumns, 'cvTableFilter');
-
-            const cvForAccuracyChart = cvModelsData.filter(m => m.accuracy).sort((a,b) => b.accuracy - a.accuracy).slice(0,10);
-            createBarChart('cvAccuracyChart', 
-                cvForAccuracyChart.map(m => m.name), cvForAccuracyChart.map(m => m.accuracy), 'Precisión Top-1 (ImageNet) (%)'
-            );
-            const cvForSpeedChart = cvModelsData.filter(m => m.speed && typeof m.speed === 'number').sort((a,b) => a.speed - b.speed).slice(0,10);
-            createBarChart('cvSpeedChart', 
-                cvForSpeedChart.map(m => m.name), cvForSpeedChart.map(m => m.speed), 'Velocidad de Inferencia (ms) - Más bajo es mejor', 'rgba(210, 105, 30, 0.6)', 'rgba(210, 105, 30, 1)'
-            );
-
-            const genAiTableColumns = [
-                { key: 'name', name: 'Modelo' }, { key: 'developer', name: 'Desarrollador' },
-                { key: 'modality', name: 'Modalidad Principal' }, { key: 'capabilities', name: 'Capacidades Generativas Clave' },
-                { key: 'features', name: 'Características Clave' }, { key: 'notes', name: 'Fortalezas / Limitaciones Notables' }
-            ];
-            setupTableInteractions('genAiTable', genAIModelsData, genAiTableColumns, 'genAiTableFilter');
-            
-            const specializedTableColumns = [
-                { key: 'name', name: 'Modelo' }, { key: 'developer', name: 'Desarrollador' },
-                { key: 'paradigm', name: 'Paradigma IA' }, { key: 'domain', name: 'Dominio/Aplicación Principal' },
-                { key: 'impact', name: 'Logro/Impacto Clave' }, { key: 'notes', name: 'Notas/Limitaciones' }
-            ];
-            setupTableInteractions('specializedTable', specializedModelsData, specializedTableColumns, 'specializedTableFilter');
-
-            document.getElementById('currentYear').textContent = new Date().getFullYear();
         });
     </script>
 </body>
